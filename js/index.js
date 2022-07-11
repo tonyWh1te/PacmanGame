@@ -1,8 +1,8 @@
-"use strict";
+'use strict';
 
-document.addEventListener("DOMContentLoaded", () => {
-  const canvas = document.querySelector("canvas"),
-    c = canvas.getContext("2d");
+document.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.querySelector('canvas'),
+    c = canvas.getContext('2d');
 
   class Boundary {
     static width = 30;
@@ -15,18 +15,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     draw() {
-      c.fillStyle = "blue";
+      c.fillStyle = 'blue';
       c.fillRect(this.position.x, this.position.y, this.width, this.height);
     }
   }
 
   //здесь отрисовка границ карты черточками
   const map = [
-      ["-", "-", "-", "-", "-", "-"],
-      ["-", " ", " ", " ", " ", "-"],
-      ["-", " ", "-", "-", " ", "-"],
-      ["-", " ", " ", " ", " ", "-"],
-      ["-", "-", "-", "-", "-", "-"],
+      ['-', '-', '-', '-', '-', '-'],
+      ['-', ' ', ' ', ' ', ' ', '-'],
+      ['-', ' ', '-', '-', ' ', '-'],
+      ['-', ' ', ' ', ' ', ' ', '-'],
+      ['-', '-', '-', '-', '-', '-'],
     ],
     boundaries = [];
 
@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
   map.forEach((row, index) => {
     row.forEach((symbol, j) => {
       switch (symbol) {
-        case "-":
+        case '-':
           boundaries.push(
             new Boundary({
               position: {
