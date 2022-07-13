@@ -47,11 +47,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   //здесь отрисовка границ карты черточками
   const map = [
-    ['-', '-', '-', '-', '-', '-'],
-    ['-', ' ', ' ', ' ', ' ', '-'],
-    ['-', ' ', '-', '-', ' ', '-'],
-    ['-', ' ', ' ', ' ', ' ', '-'],
-    ['-', '-', '-', '-', '-', '-'],
+    ['-', '-', '-', '-', '-', '-', '-'],
+    ['-', ' ', ' ', ' ', ' ', ' ', '-'],
+    ['-', ' ', '-', ' ', '-', ' ', '-'],
+    ['-', ' ', ' ', ' ', ' ', ' ', '-'],
+    ['-', ' ', '-', ' ', '-', ' ', '-'],
+    ['-', ' ', ' ', ' ', ' ', ' ', '-'],
+    ['-', '-', '-', '-', '-', '-', '-'],
   ];
 
   const keys = {
@@ -70,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   let lastKey = '';
-  
+
   const boundaries = [];
   const player = new Player({
     position: {
@@ -104,28 +106,133 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  //если какая-то из частей круга с учетом скорости станет больше границы по координатам, то игрока останавливают
+  const circleCollidesWithRectangle = ({ circle, rectangle }) => {
+    return (
+      circle.position.y - circle.radius + circle.velocity.y <=
+        rectangle.position.y + rectangle.height &&
+      circle.position.x + circle.radius + circle.velocity.x >=
+        rectangle.position.x &&
+      circle.position.y + circle.radius + circle.velocity.y >=
+        rectangle.position.y &&
+      circle.position.x - circle.radius + circle.velocity.x <=
+        rectangle.position.x + rectangle.width
+    );
+  };
+
   //анимация движения
   const animate = () => {
     requestAnimationFrame(animate);
 
     c.clearRect(0, 0, canvas.width, canvas.height);
 
-    boundaries.forEach((boundary) => boundary.draw());
+    if (keys.w.pressed && lastKey === 'w') {
+      //то, что в цикле помогает проще проходить в 2 параллельные друг другу границы (потом попробовать засунуть в функцию)
+      for (let i = 0; i < boundaries.length; i++) {
+        const boundary = boundaries[i];
+
+        if (
+          circleCollidesWithRectangle({
+            circle: {
+              ...player,
+              velocity: {
+                x: 0,
+                y: -3,
+              },
+            },
+            rectangle: boundary,
+          })
+        ) {
+          player.velocity.y = 0;
+          break;
+        } else {
+          player.velocity.y = -3;
+        }
+      }
+    } else if (keys.a.pressed && lastKey === 'a') {
+      for (let i = 0; i < boundaries.length; i++) {
+        const boundary = boundaries[i];
+
+        if (
+          circleCollidesWithRectangle({
+            circle: {
+              ...player,
+              velocity: {
+                x: -3,
+                y: 0,
+              },
+            },
+            rectangle: boundary,
+          })
+        ) {
+          player.velocity.x = 0;
+          break;
+        } else {
+          player.velocity.x = -3;
+        }
+      }
+    } else if (keys.s.pressed && lastKey === 's') {
+      for (let i = 0; i < boundaries.length; i++) {
+        const boundary = boundaries[i];
+
+        if (
+          circleCollidesWithRectangle({
+            circle: {
+              ...player,
+              velocity: {
+                x: 0,
+                y: 3,
+              },
+            },
+            rectangle: boundary,
+          })
+        ) {
+          player.velocity.y = 0;
+          break;
+        } else {
+          player.velocity.y = 3;
+        }
+      }
+    } else if (keys.d.pressed && lastKey === 'd') {
+      for (let i = 0; i < boundaries.length; i++) {
+        const boundary = boundaries[i];
+
+        if (
+          circleCollidesWithRectangle({
+            circle: {
+              ...player,
+              velocity: {
+                x: 3,
+                y: 0,
+              },
+            },
+            rectangle: boundary,
+          })
+        ) {
+          player.velocity.x = 0;
+          break;
+        } else {
+          player.velocity.x = 3;
+        }
+      }
+    }
+
+    boundaries.forEach((boundary) => {
+      boundary.draw();
+
+      if (
+        circleCollidesWithRectangle({
+          circle: player,
+          rectangle: boundary,
+        })
+      ) {
+        console.log('rbtbtr');
+        player.velocity.x = 0;
+        player.velocity.y = 0;
+      }
+    });
 
     player.update();
-
-    player.velocity.x = 0;
-    player.velocity.y = 0;
-
-    if (keys.w.pressed && lastKey === 'w') {
-      player.velocity.y = -5;
-    } else if (keys.a.pressed && lastKey === 'a') {
-      player.velocity.x = -5;
-    } else if (keys.s.pressed && lastKey === 's') {
-      player.velocity.y = 5;
-    } else if (keys.d.pressed && lastKey === 'd') {
-      player.velocity.x = 5;
-    }
   };
 
   animate();
