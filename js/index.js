@@ -8,18 +8,21 @@ document.addEventListener('DOMContentLoaded', () => {
   canvas.height = window.innerHeight;
 
   class Boundary {
-    static width = 30;
-    static height = 30;
+    static width = 40;
+    static height = 40;
 
-    constructor({ position }) {
+    constructor({ position, img }) {
       this.position = position;
-      this.width = 30;
-      this.height = 30;
+      this.width = Boundary.width;
+      this.height = Boundary.height;
+      this.img = img;
     }
 
     draw() {
-      c.fillStyle = 'blue';
-      c.fillRect(this.position.x, this.position.y, this.width, this.height);
+      // c.fillStyle = 'blue';
+      // c.fillRect(this.position.x, this.position.y, this.width, this.height);
+
+      c.drawImage(this.img, this.position.x, this.position.y);
     }
   }
 
@@ -27,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     constructor({ position, velocity }) {
       this.position = position;
       this.velocity = velocity;
-      this.radius = 12;
+      this.radius = 16;
     }
 
     draw() {
@@ -47,13 +50,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   //здесь отрисовка границ карты черточками
   const map = [
-    ['-', '-', '-', '-', '-', '-', '-'],
-    ['-', ' ', ' ', ' ', ' ', ' ', '-'],
-    ['-', ' ', '-', ' ', '-', ' ', '-'],
-    ['-', ' ', ' ', ' ', ' ', ' ', '-'],
-    ['-', ' ', '-', ' ', '-', ' ', '-'],
-    ['-', ' ', ' ', ' ', ' ', ' ', '-'],
-    ['-', '-', '-', '-', '-', '-', '-'],
+    ['1', '-', '-', '-', '-', '-', '-', '-', '-', '-', '2'],
+    ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '|'],
+    ['|', '.', 'b', '.', '[', '7', ']', '.', 'b', '.', '|'],
+    ['|', '.', '.', '.', '.', '_', '.', '.', '.', '.', '|'],
+    ['|', '.', '[', ']', '.', '.', '.', '[', ']', '.', '|'],
+    ['|', '.', '.', '.', '.', '^', '.', '.', '.', '.', '|'],
+    ['|', '.', 'b', '.', '[', '+', ']', '.', 'b', '.', '|'],
+    ['|', '.', '.', '.', '.', '_', '.', '.', '.', '.', '|'],
+    ['|', '.', '[', ']', '.', '.', '.', '[', ']', '.', '|'],
+    ['|', '.', '.', '.', '.', '^', '.', '.', '.', '.', '|'],
+    ['|', '.', 'b', '.', '[', '5', ']', '.', 'b', '.', '|'],
+    ['|', '.', '.', '.', '.', '.', '.', '.', '.', 'p', '|'],
+    ['4', '-', '-', '-', '-', '-', '-', '-', '-', '-', '3'],
   ];
 
   const keys = {
@@ -85,22 +94,105 @@ document.addEventListener('DOMContentLoaded', () => {
     },
   });
 
+  const createImage = (src) => {
+    const img = new Image();
+    img.src = src;
+
+    return img;
+  };
+
+  const createBoundary = (j, i, src) =>
+    new Boundary({
+      position: {
+        x: Boundary.width * j,
+        y: Boundary.height * i,
+      },
+      img: createImage(src),
+    });
+
   //формируем массив с границами
-  map.forEach((row, index) => {
+  map.forEach((row, i) => {
     row.forEach((symbol, j) => {
       switch (symbol) {
         case '-':
           boundaries.push(
-            new Boundary({
-              position: {
-                x: Boundary.width * j,
-                y: Boundary.height * index,
-              },
-            })
+            createBoundary(j, i, 'assets/pipeHorizontal.png')
+            );
+          break;
+        case '|':
+          boundaries.push(
+            createBoundary(j, i, 'assets/pipeVertical.png')
+            );
+          break;
+        case '1':
+          boundaries.push(
+            createBoundary(j, i, 'assets/pipeCorner1.png')
+            );
+          break;
+        case '2':
+          boundaries.push(
+            createBoundary(j, i, 'assets/pipeCorner2.png')
+            );
+          break;
+        case '3':
+          boundaries.push(
+            createBoundary(j, i, 'assets/pipeCorner3.png')
+            );
+          break;
+        case '4':
+          boundaries.push(
+            createBoundary(j, i, 'assets/pipeCorner4.png')
+            );
+          break;
+        case 'b':
+          boundaries.push(
+            createBoundary(j, i, 'assets/block.png')
+            );
+          break;
+        case '[':
+          boundaries.push(
+            createBoundary(j, i, 'assets/capLeft.png')
+            );
+          break;
+        case ']':
+          boundaries.push(
+            createBoundary(j, i, 'assets/capRight.png')
+            );
+          break;
+        case '_':
+          boundaries.push(
+            createBoundary(j, i, 'assets/capBottom.png')
+            );
+          break;
+        case '^':
+          boundaries.push(
+            createBoundary(j, i, 'assets/capTop.png')
+            );
+          break;
+        case '+':
+          boundaries.push(
+            createBoundary(j, i, 'assets/pipeCross.png')
+            );
+          break;
+        case '5':
+          boundaries.push(
+            createBoundary(j, i, 'assets/pipeConnectorTop.png')
+            );
+          break;
+        case '6':
+          boundaries.push(
+            createBoundary(j, i, 'assets/pipeConnectorRight.png')
           );
           break;
-
-        default:
+        case '7':
+          boundaries.push(
+            createBoundary(j, i, 'assets/pipeConnectorBottom.png')
+          );
+          break;
+        case '8':
+          boundaries.push(
+            createBoundary(j, i, 'assets/pipeConnectorLeft.png')
+            );
           break;
       }
     });
@@ -137,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
               ...player,
               velocity: {
                 x: 0,
-                y: -3,
+                y: -4,
               },
             },
             rectangle: boundary,
@@ -146,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
           player.velocity.y = 0;
           break;
         } else {
-          player.velocity.y = -3;
+          player.velocity.y = -4;
         }
       }
     } else if (keys.a.pressed && lastKey === 'a') {
@@ -158,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
             circle: {
               ...player,
               velocity: {
-                x: -3,
+                x: -4,
                 y: 0,
               },
             },
@@ -168,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
           player.velocity.x = 0;
           break;
         } else {
-          player.velocity.x = -3;
+          player.velocity.x = -4;
         }
       }
     } else if (keys.s.pressed && lastKey === 's') {
@@ -181,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
               ...player,
               velocity: {
                 x: 0,
-                y: 3,
+                y: 4,
               },
             },
             rectangle: boundary,
@@ -190,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
           player.velocity.y = 0;
           break;
         } else {
-          player.velocity.y = 3;
+          player.velocity.y = 4;
         }
       }
     } else if (keys.d.pressed && lastKey === 'd') {
@@ -202,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
             circle: {
               ...player,
               velocity: {
-                x: 3,
+                x: 4,
                 y: 0,
               },
             },
@@ -212,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
           player.velocity.x = 0;
           break;
         } else {
-          player.velocity.x = 3;
+          player.velocity.x = 4;
         }
       }
     }
