@@ -2,6 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.querySelector('canvas'),
+    score = document.querySelector('#score'),
     c = canvas.getContext('2d');
 
   canvas.width = window.innerWidth;
@@ -91,7 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
     },
   };
 
-  let lastKey = '';
+  let lastKey = '',
+    count = 0;
 
   const pellets = [],
     boundaries = [];
@@ -336,6 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    //перебор массива с конца, чтобы избавиться от мерцаний во время поедания шариков
     for (let i = pellets.length - 1; i > 0; i--) {
       const pellet = pellets[i];
 
@@ -348,7 +351,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ) <
         pellet.radius + player.radius
       ) {
-        console.log('touch');
+        count += 10;
+        score.textContent = count;
         pellets.splice(i, 1);
       } 
     }
