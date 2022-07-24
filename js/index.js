@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ['|', '.', '[', ']', '.', '.', '.', '[', ']', '.', '|'],
     ['|', '.', '.', '.', '.', '^', '.', '.', '.', '.', '|'],
     ['|', '.', 'b', '.', '[', '5', ']', '.', 'b', '.', '|'],
-    ['|', '.', '.', '.', '.', '.', '.', '.', '.', 'p', '|'],
+    ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '|'],
     ['4', '-', '-', '-', '-', '-', '-', '-', '-', '-', '3'],
   ];
 
@@ -336,9 +336,22 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    pellets.forEach(pellet => {
+    for (let i = pellets.length - 1; i > 0; i--) {
+      const pellet = pellets[i];
+
       pellet.draw();
-    });
+
+      if (
+        Math.hypot(
+          pellet.position.x - player.position.x,
+          pellet.position.y - player.position.y
+        ) <
+        pellet.radius + player.radius
+      ) {
+        console.log('touch');
+        pellets.splice(i, 1);
+      } 
+    }
 
     boundaries.forEach((boundary) => {
       boundary.draw();
@@ -349,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
           rectangle: boundary,
         })
       ) {
-        console.log('rbtbtr');
+        console.log('boom');
         player.velocity.x = 0;
         player.velocity.y = 0;
       }
