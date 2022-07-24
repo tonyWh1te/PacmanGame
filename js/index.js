@@ -26,19 +26,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  class Player {
-    constructor({ position, velocity }) {
+  class Circle {
+    constructor({ position, color, radius }) {
       this.position = position;
-      this.velocity = velocity;
-      this.radius = 16;
+      this.color = color;
+      this.radius = radius;
     }
 
     draw() {
       c.beginPath();
       c.arc(this.position.x, this.position.y, this.radius, Math.PI * 2, 0);
-      c.fillStyle = 'yellow';
+      c.fillStyle = this.color;
       c.fill();
       c.closePath();
+    }
+  }
+
+  class Player extends Circle {
+    constructor({ position, velocity, color, radius }) {
+      super({ position, color, radius });
+      this.velocity = velocity;
     }
 
     update() {
@@ -46,6 +53,10 @@ document.addEventListener('DOMContentLoaded', () => {
       this.position.x += this.velocity.x;
       this.position.y += this.velocity.y;
     }
+  }
+
+  class Pellet extends Circle {
+
   }
 
   //здесь отрисовка границ карты черточками
@@ -82,7 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let lastKey = '';
 
-  const boundaries = [];
+  const pellets = [],
+    boundaries = [];
+    
   const player = new Player({
     position: {
       x: Boundary.width + Boundary.width / 2,
@@ -92,6 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
       x: 0,
       y: 0,
     },
+    color: 'yellow',
+    radius: 16
   });
 
   const createImage = (src) => {
@@ -193,6 +208,18 @@ document.addEventListener('DOMContentLoaded', () => {
           boundaries.push(
             createBoundary(j, i, 'assets/pipeConnectorLeft.png')
             );
+          break;
+        case '.':
+          pellets.push(
+            new Pellet({
+              position: {
+                x: j * Boundary.width + Boundary.width / 2,
+                y: i * Boundary.height + Boundary.height / 2
+              },
+              color: 'white',
+              radius: 3
+            })
+          );
           break;
       }
     });
@@ -308,6 +335,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     }
+
+    pellets.forEach(pellet => {
+      pellet.draw();
+    });
 
     boundaries.forEach((boundary) => {
       boundary.draw();
