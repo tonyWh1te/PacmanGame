@@ -56,9 +56,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  class Pellet extends Circle {
+  class Ghost extends Circle {
+    static speed = 4;
 
+    constructor({ position, velocity, color, radius }) {
+      super({ position, color, radius });
+      this.velocity = velocity;
+      this.prevCollisions = [];
+      this.speed = Ghost.speed;
+    }
+
+    update() {
+      this.draw();
+      this.position.x += this.velocity.x;
+      this.position.y += this.velocity.y;
+    }
   }
+
+  class Pellet extends Circle {}
 
   //здесь отрисовка границ карты черточками
   const map = [
@@ -96,7 +111,21 @@ document.addEventListener('DOMContentLoaded', () => {
     count = 0;
 
   const pellets = [],
-    boundaries = [];
+    boundaries = [],
+    ghosts = [
+      new Ghost({
+        position: {
+          x: Boundary.width * 6 + Boundary.width / 2,
+          y: Boundary.height + Boundary.height / 2
+        },
+        velocity: {
+          x: Ghost.speed,
+          y: 0
+        },
+        color: 'red',
+        radius: 16
+      })
+    ];
     
   const player = new Player({
     position: {
@@ -229,21 +258,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   //если какая-то из частей круга с учетом скорости станет больше границы по координатам, то игрока останавливают
   const circleCollidesWithRectangle = ({ circle, rectangle }) => {
+    const padding = Boundary.width / 2  - circle.radius - 2; //расстояние между кругом и границей
+
     return (
       circle.position.y - circle.radius + circle.velocity.y <=
-        rectangle.position.y + rectangle.height &&
+        rectangle.position.y + rectangle.height + padding &&
       circle.position.x + circle.radius + circle.velocity.x >=
-        rectangle.position.x &&
+        rectangle.position.x - padding &&
       circle.position.y + circle.radius + circle.velocity.y >=
-        rectangle.position.y &&
+        rectangle.position.y - padding &&
       circle.position.x - circle.radius + circle.velocity.x <=
-        rectangle.position.x + rectangle.width
+        rectangle.position.x + rectangle.width + padding
     );
   };
 
+  let animationId;
+
   //анимация движения
   const animate = () => {
-    requestAnimationFrame(animate);
+   animationId = requestAnimationFrame(animate); //любой кадр на котором находимся
 
     c.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -258,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
               ...player,
               velocity: {
                 x: 0,
-                y: -4,
+                y: -5,
               },
             },
             rectangle: boundary,
@@ -267,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
           player.velocity.y = 0;
           break;
         } else {
-          player.velocity.y = -4;
+          player.velocity.y = -5;
         }
       }
     } else if (keys.a.pressed && lastKey === 'a') {
@@ -279,7 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
             circle: {
               ...player,
               velocity: {
-                x: -4,
+                x: -5,
                 y: 0,
               },
             },
@@ -289,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
           player.velocity.x = 0;
           break;
         } else {
-          player.velocity.x = -4;
+          player.velocity.x = -5;
         }
       }
     } else if (keys.s.pressed && lastKey === 's') {
@@ -302,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
               ...player,
               velocity: {
                 x: 0,
-                y: 4,
+                y: 5,
               },
             },
             rectangle: boundary,
@@ -311,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
           player.velocity.y = 0;
           break;
         } else {
-          player.velocity.y = 4;
+          player.velocity.y = 5;
         }
       }
     } else if (keys.d.pressed && lastKey === 'd') {
@@ -323,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
             circle: {
               ...player,
               velocity: {
-                x: 4,
+                x: 5,
                 y: 0,
               },
             },
@@ -333,12 +366,32 @@ document.addEventListener('DOMContentLoaded', () => {
           player.velocity.x = 0;
           break;
         } else {
-          player.velocity.x = 4;
+          player.velocity.x = 5;
         }
       }
     }
 
-    //перебор массива с конца, чтобы избавиться от мерцаний во время поедания шариков
+    const choiceDirection = (ghost, collisions) => {
+      //проверка на доп. пути, чтобы если что тоже добавить это в список путей
+      if (ghost.velocity.x > 0) {
+        ghost.prevCollisions.push('right');
+      } else if (ghost.velocity.x < 0) {
+        ghost.prevCollisions.push('left');
+      } else if (ghost.velocity.y < 0) {
+        ghost.prevCollisions.push('up');
+      } else if (ghost.velocity.y > 0) {
+        ghost.prevCollisions.push('down');
+      }
+
+      //ищем те пути, которые есть в prevCollisions, но нет в collisions
+      const pathways = ghost.prevCollisions.filter(
+        (collision) => !collisions.includes(collision)
+      );
+
+      return pathways[Math.floor(Math.random() * pathways.length)];
+    };
+
+    //перебор массива с конца, чтобы избавиться от мерцаний во время поедания шариков (это происходило из-за их смещения после удаления одного из шаров)
     for (let i = pellets.length - 1; i > 0; i--) {
       const pellet = pellets[i];
 
@@ -366,13 +419,128 @@ document.addEventListener('DOMContentLoaded', () => {
           rectangle: boundary,
         })
       ) {
-        console.log('boom');
         player.velocity.x = 0;
         player.velocity.y = 0;
       }
     });
 
     player.update();
+    
+    ghosts.forEach((ghost) => {
+      ghost.update();
+
+      //обработка столкновения с призраком
+      if (
+        Math.hypot(
+          ghost.position.x - player.position.x,
+          ghost.position.y - player.position.y
+        ) <
+        ghost.radius + player.radius
+      ) {
+        cancelAnimationFrame(animationId);
+        console.log('loser');
+      }
+
+      const collisions = [];
+
+      boundaries.forEach((boundary) => {
+
+        //попробовать обернуть в функцию
+        if (
+          !collisions.includes('right') &&
+          circleCollidesWithRectangle({
+            circle: {
+              ...ghost,
+              velocity: {
+                x: ghost.speed,
+                y: 0,
+              },
+            },
+            rectangle: boundary,
+          })
+        ) {
+          collisions.push('right');
+        }
+
+        if (
+          !collisions.includes('left') &&
+          circleCollidesWithRectangle({
+            circle: {
+              ...ghost,
+              velocity: {
+                x: -ghost.speed,
+                y: 0,
+              },
+            },
+            rectangle: boundary,
+          })
+        ) {
+          collisions.push('left');
+        }
+
+        if (
+          !collisions.includes('up') &&
+          circleCollidesWithRectangle({
+            circle: {
+              ...ghost,
+              velocity: {
+                x: 0,
+                y: -ghost.speed
+              },
+            },
+            rectangle: boundary,
+          })
+        ) {
+          collisions.push('up');
+        }
+
+        if (
+          !collisions.includes('down') &&
+          circleCollidesWithRectangle({
+            circle: {
+              ...ghost,
+              velocity: {
+                x: 0,
+                y: ghost.speed
+              },
+            },
+            rectangle: boundary,
+          })
+        ) {
+          collisions.push('down');
+        }
+      });
+
+      if (collisions.length > ghost.prevCollisions.length) {
+        ghost.prevCollisions = collisions;      
+      }
+
+      //проверка на появление новых путей
+      if (JSON.stringify(collisions) !== JSON.stringify(ghost.prevCollisions)) {
+        const direction = choiceDirection(ghost, collisions);
+
+        switch (direction) {
+          case 'down':
+            ghost.velocity.y = ghost.speed;
+            ghost.velocity.x = 0;
+            break;
+          case 'up':
+            ghost.velocity.y = -ghost.speed;
+            ghost.velocity.x = 0;
+            break;
+          case 'right':
+            ghost.velocity.y = 0;
+            ghost.velocity.x = ghost.speed;
+            break;
+          case 'left':
+            ghost.velocity.y = 0;
+            ghost.velocity.x = -ghost.speed;
+            break;
+        }
+
+        ghost.prevCollisions = [];
+      }
+    });
   };
 
   animate();
