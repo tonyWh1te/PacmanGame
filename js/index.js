@@ -37,7 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
     draw() {
       c.beginPath();
       c.arc(this.position.x, this.position.y, this.radius, Math.PI * 2, 0);
-      c.fillStyle = this.color;
       c.fill();
       c.closePath();
     }
@@ -49,6 +48,11 @@ document.addEventListener('DOMContentLoaded', () => {
       this.velocity = velocity;
     }
 
+    draw() {
+      c.fillStyle = this.color;
+      super.draw();
+    }
+
     update() {
       this.draw();
       this.position.x += this.velocity.x;
@@ -57,13 +61,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   class Ghost extends Circle {
-    static speed = 4;
+    static speed = 3;
 
     constructor({ position, velocity, color, radius }) {
       super({ position, color, radius });
       this.velocity = velocity;
       this.prevCollisions = [];
       this.speed = Ghost.speed;
+      this.scared = false;
+    }
+
+    draw() {
+      c.fillStyle = this.scared ? 'white' : this.color;
+      super.draw();
     }
 
     update() {
@@ -73,7 +83,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  class Pellet extends Circle {}
+  class Pellet extends Circle {
+    draw() {
+      c.fillStyle = this.color;
+      super.draw();
+    }
+  }
+
+  class PowerUp extends Circle {
+    draw() {
+      c.fillStyle = this.color;
+      super.draw();
+    }
+  }
 
   //здесь отрисовка границ карты черточками
   const map = [
@@ -86,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ['|', '.', 'b', '.', '[', '+', ']', '.', 'b', '.', '|'],
     ['|', '.', '.', '.', '.', '_', '.', '.', '.', '.', '|'],
     ['|', '.', '[', ']', '.', '.', '.', '[', ']', '.', '|'],
-    ['|', '.', '.', '.', '.', '^', '.', '.', '.', '.', '|'],
+    ['|', '.', '.', 'p', '.', '^', '.', '.', '.', '.', '|'],
     ['|', '.', 'b', '.', '[', '5', ']', '.', 'b', '.', '|'],
     ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '|'],
     ['4', '-', '-', '-', '-', '-', '-', '-', '-', '-', '3'],
@@ -112,18 +134,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const pellets = [],
     boundaries = [],
+    powerUps = [],
     ghosts = [
       new Ghost({
         position: {
           x: Boundary.width * 6 + Boundary.width / 2,
-          y: Boundary.height + Boundary.height / 2
+          y: Boundary.height + Boundary.height / 2,
         },
         velocity: {
           x: Ghost.speed,
-          y: 0
+          y: 0,
         },
         color: 'red',
-        radius: 16
+        radius: 16,
+      }),
+      new Ghost({
+        position: {
+          x: Boundary.width * 4 + Boundary.width / 2,
+          y: Boundary.height * 11 + Boundary.height / 2,
+        },
+        velocity: {
+          x: Ghost.speed,
+          y: 0,
+        },
+        color: 'red',
+        radius: 16,
       })
     ];
     
@@ -252,6 +287,18 @@ document.addEventListener('DOMContentLoaded', () => {
             })
           );
           break;
+          case 'p':
+            powerUps.push(
+              new PowerUp({
+                position: {
+                  x: j * Boundary.width + Boundary.width / 2,
+                  y: i * Boundary.height + Boundary.height / 2,
+                },
+                color: 'orange',
+                radius: 8
+              })
+            );
+            break;
       }
     });
   });
@@ -410,6 +457,31 @@ document.addEventListener('DOMContentLoaded', () => {
       } 
     }
 
+    //усиление (заставляет призраков испугаться) (убрать повторение кода этого и предыдущего цикла)
+    for (let i = powerUps.length - 1; i >= 0; i--) {
+      const powerUp = powerUps[i];
+
+      powerUp.draw();
+
+      if (
+        Math.hypot(
+          powerUp.position.x - player.position.x,
+          powerUp.position.y - player.position.y
+        ) <
+        powerUp.radius + player.radius
+      ) {
+        powerUps.splice(i, 1);
+
+        ghosts.forEach(ghost => {
+          ghost.scared = true;
+
+          setTimeout(() => {
+            ghost.scared = false;
+          }, 5000);
+        });
+      }      
+    }
+
     boundaries.forEach((boundary) => {
       boundary.draw();
 
@@ -435,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ghost.position.x - player.position.x,
           ghost.position.y - player.position.y
         ) <
-        ghost.radius + player.radius
+        ghost.radius + player.radius && !ghost.scared
       ) {
         cancelAnimationFrame(animationId);
         console.log('loser');
