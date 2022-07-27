@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     draw() {
       c.beginPath();
+      c.fillStyle = this.color;
       c.arc(this.position.x, this.position.y, this.radius, Math.PI * 2, 0);
       c.fill();
       c.closePath();
@@ -46,17 +47,41 @@ document.addEventListener('DOMContentLoaded', () => {
     constructor({ position, velocity, color, radius }) {
       super({ position, color, radius });
       this.velocity = velocity;
+      this.radians = 0.75;
+      this.openRate = 0.12;
+      this.rotation = 0;
     }
 
     draw() {
+      c.save();
+      c.translate(this.position.x, this.position.y);
+      c.rotate(this.rotation);
+      c.translate(-this.position.x, -this.position.y);
+      c.beginPath();
       c.fillStyle = this.color;
-      super.draw();
+      c.arc(
+        this.position.x,
+        this.position.y,
+        this.radius,
+        this.radians,
+        Math.PI * 2 - this.radians
+      );
+      c.lineTo(this.position.x, this.position.y);
+      c.fill();
+      c.closePath();
+      c.restore();
     }
 
     update() {
       this.draw();
       this.position.x += this.velocity.x;
       this.position.y += this.velocity.y;
+
+      if (this.radians < 0 || this.radians > 0.75) {
+        this.openRate = -this.openRate;
+      }
+
+      this.radians += this.openRate;
     }
   }
 
@@ -72,8 +97,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     draw() {
+      c.beginPath();
       c.fillStyle = this.scared ? 'white' : this.color;
-      super.draw();
+      c.arc(this.position.x, this.position.y, this.radius, Math.PI * 2, 0);
+      c.fill();
+      c.closePath();
     }
 
     update() {
@@ -83,24 +111,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  class Pellet extends Circle {
-    draw() {
-      c.fillStyle = this.color;
-      super.draw();
-    }
-  }
+  class Pellet extends Circle {}
 
-  class PowerUp extends Circle {
-    draw() {
-      c.fillStyle = this.color;
-      super.draw();
-    }
-  }
+  class PowerUp extends Circle {}
 
   //здесь отрисовка границ карты черточками
   const map = [
     ['1', '-', '-', '-', '-', '-', '-', '-', '-', '-', '2'],
-    ['|', '.', '.', '.', '.', '.', '.', '.', '.', '.', '|'],
+    ['|', '', '.', '.', '.', '.', '.', '.', '.', '.', '|'],
     ['|', '.', 'b', '.', '[', '7', ']', '.', 'b', '.', '|'],
     ['|', '.', '.', '.', '.', '_', '.', '.', '.', '.', '|'],
     ['|', '.', '[', ']', '.', '.', '.', '[', ']', '.', '|'],
@@ -323,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   //анимация движения
   const animate = () => {
-   animationId = requestAnimationFrame(animate); //любой кадр на котором находимся
+    animationId = requestAnimationFrame(animate); //любой кадр на котором находимся
 
     c.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -438,8 +456,14 @@ document.addEventListener('DOMContentLoaded', () => {
       return pathways[Math.floor(Math.random() * pathways.length)];
     };
 
+    // условие выигрыша
+    if (pellets.length === 0) {
+      console.log('win');
+      cancelAnimationFrame(animationId);
+    }
+
     //перебор массива с конца, чтобы избавиться от мерцаний во время поедания шариков (это происходило из-за их смещения после удаления одного из шаров)
-    for (let i = pellets.length - 1; i > 0; i--) {
+    for (let i = pellets.length - 1; i >= 0; i--) {
       const pellet = pellets[i];
 
       pellet.draw();
@@ -454,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
         count += 10;
         score.textContent = count;
         pellets.splice(i, 1);
-      } 
+      }
     }
 
     //усиление (заставляет призраков испугаться) (убрать повторение кода этого и предыдущего цикла)
@@ -472,14 +496,35 @@ document.addEventListener('DOMContentLoaded', () => {
       ) {
         powerUps.splice(i, 1);
 
-        ghosts.forEach(ghost => {
+        ghosts.forEach((ghost) => {
           ghost.scared = true;
 
           setTimeout(() => {
             ghost.scared = false;
           }, 5000);
         });
-      }      
+      }
+    }
+
+    //обработка столкновения с призраком
+    for (let i = ghosts.length - 1; i >= 0; i--) {
+      const ghost = ghosts[i];
+
+      if (
+        Math.hypot(
+          ghost.position.x - player.position.x,
+          ghost.position.y - player.position.y
+        ) <
+        ghost.radius + player.radius
+      ) {
+
+        if (ghost.scared) {
+          ghosts.splice(i, 1);
+        } else {
+          cancelAnimationFrame(animationId);
+          console.log('loser');
+        }
+      }
     }
 
     boundaries.forEach((boundary) => {
@@ -497,26 +542,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     player.update();
-    
+
     ghosts.forEach((ghost) => {
       ghost.update();
-
-      //обработка столкновения с призраком
-      if (
-        Math.hypot(
-          ghost.position.x - player.position.x,
-          ghost.position.y - player.position.y
-        ) <
-        ghost.radius + player.radius && !ghost.scared
-      ) {
-        cancelAnimationFrame(animationId);
-        console.log('loser');
-      }
 
       const collisions = [];
 
       boundaries.forEach((boundary) => {
-
         //попробовать обернуть в функцию
         if (
           !collisions.includes('right') &&
@@ -557,7 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
               ...ghost,
               velocity: {
                 x: 0,
-                y: -ghost.speed
+                y: -ghost.speed,
               },
             },
             rectangle: boundary,
@@ -573,7 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
               ...ghost,
               velocity: {
                 x: 0,
-                y: ghost.speed
+                y: ghost.speed,
               },
             },
             rectangle: boundary,
@@ -584,7 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (collisions.length > ghost.prevCollisions.length) {
-        ghost.prevCollisions = collisions;      
+        ghost.prevCollisions = collisions;
       }
 
       //проверка на появление новых путей
@@ -613,6 +645,16 @@ document.addEventListener('DOMContentLoaded', () => {
         ghost.prevCollisions = [];
       }
     });
+
+    if (player.velocity.x > 0) {
+      player.rotation = 0;
+    } else if (player.velocity.x < 0) {
+      player.rotation = Math.PI;
+    } else if (player.velocity.y > 0) {
+      player.rotation = Math.PI / 2;
+    } else if (player.velocity.y < 0) {
+      player.rotation = Math.PI * 1.5;
+    }
   };
 
   animate();
