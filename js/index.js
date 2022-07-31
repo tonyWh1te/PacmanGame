@@ -157,55 +157,28 @@ document.addEventListener('DOMContentLoaded', () => {
     boundaries = [],
     powerUps = [],
     ghosts = [
-      new Ghost({
-        position: {
-          x: Boundary.width * 13 + Boundary.width / 2,
-          y: Boundary.height * 5 + Boundary.height / 2,
-        },
-        velocity: {
-          x: Ghost.speed,
-          y: 0,
-        },
-        color: 'red',
-        radius: 16,
-      }),
-      new Ghost({
-        position: {
-          x: Boundary.width * 8 + Boundary.width / 2,
-          y: Boundary.height * 9 + Boundary.height / 2,
-        },
-        velocity: {
-          x: 0,
-          y: Ghost.speed,
-        },
-        color: 'red',
-        radius: 16,
-      }),
-      new Ghost({
-        position: {
-          x: Boundary.width * 9 + Boundary.width / 2,
-          y: Boundary.height * 5 + Boundary.height / 2,
-        },
-        velocity: {
-          x: -Ghost.speed,
-          y: 0,
-        },
-        color: 'red',
-        radius: 16,
-      }),
-      new Ghost({
-        position: {
-          x: Boundary.width * 12 + Boundary.width / 2,
-          y: Boundary.height * 9 + Boundary.height / 2,
-        },
-        velocity: {
-          x: Ghost.speed,
-          y: 0,
-        },
-        color: 'red',
-        radius: 16,
-      }),
+      // new Ghost({
+      //   position: {
+      //     x: Boundary.width * 13 + Boundary.width / 2,
+      //     y: Boundary.height * 5 + Boundary.height / 2,
+      //   },
+      //   velocity: {
+      //     x: Ghost.speed,
+      //     y: 0,
+      //   },
+      //   color: 'red',
+      //   radius: 16,
+      // })
     ];
+
+  //получили призраков из бд
+  fetch('./db.json')
+    .then((data) => data.json())
+    .then((res) =>
+      Object.keys(res).forEach((key) =>
+        res[key].forEach((ghost) => ghosts.push(new Ghost(ghost)))
+      )
+    );
     
   const player = new Player({
     position: {
