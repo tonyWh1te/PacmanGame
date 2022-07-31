@@ -5,8 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     score = document.querySelector('#score'),
     c = canvas.getContext('2d');
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  setCanvasSize();
 
   class Boundary {
     static width = 40;
@@ -221,6 +220,11 @@ document.addEventListener('DOMContentLoaded', () => {
     radius: 16
   });
 
+  function setCanvasSize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
   const createImage = (src) => {
     const img = new Image();
     img.src = src;
@@ -365,6 +369,16 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   };
 
+  const circleCollidesWithCircle = ({firstCircle, secondCircle}) => {
+    return (
+      Math.hypot(
+        firstCircle.position.x - secondCircle.position.x,
+        firstCircle.position.y - secondCircle.position.y
+      ) <
+      firstCircle.radius + secondCircle.radius
+    );
+  };
+
   let animationId;
 
   //анимация движения
@@ -497,12 +511,10 @@ document.addEventListener('DOMContentLoaded', () => {
       pellet.draw();
 
       if (
-        Math.hypot(
-          pellet.position.x - player.position.x,
-          pellet.position.y - player.position.y
-        ) <
-        pellet.radius + player.radius
-      ) {
+        circleCollidesWithCircle({
+        firstCircle: pellet,
+        secondCircle: player
+      })) {
         count += 10;
         score.textContent = count;
         pellets.splice(i, 1);
@@ -516,11 +528,10 @@ document.addEventListener('DOMContentLoaded', () => {
       powerUp.draw();
 
       if (
-        Math.hypot(
-          powerUp.position.x - player.position.x,
-          powerUp.position.y - player.position.y
-        ) <
-        powerUp.radius + player.radius
+        circleCollidesWithCircle({
+          firstCircle: powerUp,
+          secondCircle: player,
+        })
       ) {
         powerUps.splice(i, 1);
 
@@ -539,13 +550,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const ghost = ghosts[i];
 
       if (
-        Math.hypot(
-          ghost.position.x - player.position.x,
-          ghost.position.y - player.position.y
-        ) <
-        ghost.radius + player.radius
+        circleCollidesWithCircle({
+          firstCircle: ghost,
+          secondCircle: player,
+        })
       ) {
-
         if (ghost.scared) {
           ghosts.splice(i, 1);
         } else {
