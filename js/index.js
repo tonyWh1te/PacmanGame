@@ -352,6 +352,40 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   };
 
+  const collisionCheck = (side, sides, circle, rectangle) => {
+    let x = 0,
+      y = 0;
+
+    switch (side) {
+      case 'left':
+        x = -circle.speed;
+        break;
+      case 'right':
+        x = circle.speed;
+        break;
+      case 'up':
+        y = -circle.speed;
+        break;
+      case 'down':
+        y = circle.speed;
+        break;
+    }
+
+    return (
+      !sides.includes(side) &&
+      circleCollidesWithRectangle({
+        circle: {
+          ...circle,
+          velocity: {
+            x: x,
+            y: y,
+          },
+        },
+        rectangle: rectangle,
+      })
+    );
+  };
+
   let animationId;
 
   //анимация движения
@@ -560,67 +594,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
       boundaries.forEach((boundary) => {
         //попробовать обернуть в функцию
-        if (
-          !collisions.includes('right') &&
-          circleCollidesWithRectangle({
-            circle: {
-              ...ghost,
-              velocity: {
-                x: ghost.speed,
-                y: 0,
-              },
-            },
-            rectangle: boundary,
-          })
-        ) {
+        if (collisionCheck('right', collisions, ghost, boundary)) {
           collisions.push('right');
         }
 
-        if (
-          !collisions.includes('left') &&
-          circleCollidesWithRectangle({
-            circle: {
-              ...ghost,
-              velocity: {
-                x: -ghost.speed,
-                y: 0,
-              },
-            },
-            rectangle: boundary,
-          })
-        ) {
+        if (collisionCheck('left', collisions, ghost, boundary)) {
           collisions.push('left');
         }
 
-        if (
-          !collisions.includes('up') &&
-          circleCollidesWithRectangle({
-            circle: {
-              ...ghost,
-              velocity: {
-                x: 0,
-                y: -ghost.speed,
-              },
-            },
-            rectangle: boundary,
-          })
-        ) {
+        if (collisionCheck('up', collisions, ghost, boundary)) {
           collisions.push('up');
         }
 
-        if (
-          !collisions.includes('down') &&
-          circleCollidesWithRectangle({
-            circle: {
-              ...ghost,
-              velocity: {
-                x: 0,
-                y: ghost.speed,
-              },
-            },
-            rectangle: boundary,
-          })
-        ) {
+        if (collisionCheck('down', collisions, ghost, boundary)) {
           collisions.push('down');
         }
       });
